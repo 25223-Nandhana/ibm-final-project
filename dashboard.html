@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h2>Live HMI Telemetry Dashboard</h2>
+        <span class="status-badge status-online">Data Sync Active</span>
+    </div>
+
+    <!-- Inject Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Current Selected Node</h3>
+            <p class="stat-value text-accent">CNC-Milling-01</p>
+            <p class="stat-detail">Identity automatically verified</p>
+        </div>
+        <div class="stat-card">
+            <h3>Your Access Level</h3>
+            <p class="stat-value role-badge role-{{ current_user.role }}">{{ current_user.role|capitalize }}</p>
+            <p class="stat-detail">Verified via Session Cookie</p>
+        </div>
+        <div class="stat-card">
+            <h3>Status</h3>
+            <p class="stat-value text-success">Healthy</p>
+            <p class="stat-detail">Live Polling Every 2s</p>
+        </div>
+    </div>
+
+    <div class="content-panel hmi-panel">
+        <h3>Real-time Sensory Analysis</h3>
+        <p>This graph continuously pulls data from the registered machine telemetry API endpoints safely.</p>
+        
+        <div class="chart-container">
+            <canvas id="telemetryChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hmi-panel { margin-top: 1.5rem; }
+    .chart-container {
+        position: relative;
+        height: 400px;
+        width: 100%;
+        margin-top: 1.5rem;
+        background-color: var(--bg-main);
+        padding: 1rem;
+        border-radius: var(--border-radius);
+    }
+</style>
+
+<script>
+    // Initialize Chart.js with dark theme configuration
+    Chart.defaults.color = '#94A3B8';
+    Chart.defaults.font.family = 'Inter';
+
+    const ctx = document.getElementById('telemetryChart').getContext('2d');
+    const telemetryChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [
+                {
+                    label: 'Temperature (°C)',
+                    borderColor: '#EF4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    data: [],
+                    fill: true,
+                    tension: 0.4
+                },
+                {
+                    label: 'Vibration (mm/s)',
+                    borderColor: '#3B82F6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    data: [],
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, grid: { color: '#2D3748' } },
+                x: { grid: { color: '#2D3748' } }
+            },
+            animation: { duration: 0 } // Disable animation for smoother live data feel
+        }
+    });
+
+    // Function to fetch telemetry data and update chart
+    async function fetchTelemetry() {
+        try {
+            const response = await fetch('/api/stats');
+            const data = await response.json();
+            
+            telemetryChart.data.labels = data.labels;
+            telemetryChart.data.datasets[0].data = data.temperature;
+            telemetryChart.data.datasets[1].data = data.vibration;
+            telemetryChart.update();
+        } catch (error) {
+            console.error("Error fetching telemetry:", error);
+        }
+    }
+
+    // Initial fetch, then poll every 2 seconds
+    fetchTelemetry();
+    setInterval(fetchTelemetry, 2000);
+</script>
+{% endblock %}

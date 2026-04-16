@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h2>Manager Dashboard</h2>
+        <span class="status-badge status-warning">Read-Only Overview</span>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Total Workers</h3>
+            <p class="stat-value">{{ workers|length }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Machine Endpoints</h3>
+            <p class="stat-value text-accent">{{ machines|length }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Your Access Level</h3>
+            <p class="stat-value role-badge role-manager">Manager</p>
+            <p class="stat-detail">Elevated Monitoring Details</p>
+        </div>
+    </div>
+
+    <div class="content-panel" style="margin-top: 1.5rem;">
+        <h3>Worker Fleet Overview</h3>
+        <p>Comprehensive list of registered workers, their tasks, and shifts.</p>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Worker ID</th>
+                    <th>Username</th>
+                    <th>Department</th>
+                    <th>Tasks</th>
+                    <th>Shifts</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for worker in workers %}
+                <tr>
+                    <td>{{ worker.id }}</td>
+                    <td><strong>{{ worker.username }}</strong></td>
+                    <td>{{ worker.department or 'N/A' }}</td>
+                    <td>
+                        <ul style="padding-left: 20px; margin: 0;">
+                            {% for task in worker.tasks %}
+                                <li>{{ task.description }} ({{ task.status }})</li>
+                            {% else %}
+                                <li><em>No tasks</em></li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td>
+                        <ul style="padding-left: 20px; margin: 0;">
+                            {% for shift in worker.shifts %}
+                                <li>{{ shift.shift_date.strftime('%Y-%m-%d') }}: {{ shift.start_time }} to {{ shift.end_time }}</li>
+                            {% else %}
+                                <li><em>No shifts</em></li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="grid-2-col" style="margin-top: 1.5rem;">
+        <div class="content-panel">
+            <h3>Active Machine Identities</h3>
+            <p>API keys registered for IIoT endpoint telemetry data push.</p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Machine ID</th>
+                        <th>API Key Status</th>
+                        <th>Last Seen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in machines %}
+                    <tr>
+                        <td><strong>{{ m.machine_name }}</strong></td>
+                        <td><span class="status-indicator success"></span> Active Hash</td>
+                        <td>{{ m.last_seen.strftime('%Y-%m-%d %H:%M') if m.last_seen else 'Never' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="content-panel">
+            <h3>Worker Login/Logout Audit (Recent)</h3>
+            <p>Latest authentication activity across the platform.</p>
+            <table class="data-table log-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>User ID</th>
+                        <th>Event Action</th>
+                        <th>IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ log.user.username if log.user else 'Unknown' }}</td>
+                        <td>{{ log.action }}</td>
+                        <td class="text-muted">{{ log.ip_address }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4">No auth logs found.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .grid-2-col {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        gap: 1.5rem;
+    }
+    .status-indicator {
+        height: 10px;
+        width: 10px;
+        background-color: #10B981;
+        border-radius: 50%;
+        display: inline-block;
+    }
+    .status-warning {
+        background-color: rgba(245, 158, 11, 0.2);
+        color: #F59E0B;
+    }
+    .text-muted { color: #9ca3af; }
+    .text-accent { color: #3B82F6; }
+</style>
+{% endblock %}

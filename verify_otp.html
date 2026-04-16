@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="auth-card">
+        <h2>Two-Factor Verification</h2>
+        <p class="subtitle">A mock verification code was generated on your screen. Enter it below to proceed.</p>
+        
+        <form method="POST" action="{{ url_for('verify_otp') }}" class="auth-form">
+            <div class="form-group">
+                <label for="otp">Simulated Verification Code</label>
+                <input type="text" id="otp" name="otp" required autofocus placeholder="e.g. 123456" pattern="\d+" title="Please enter a numeric code">
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block">Verify & Authenticate</button>
+        </form>
+        
+        <div style="margin-top: 1rem; text-align: center;">
+            <form method="POST" action="{{ url_for('resend_otp') }}" style="display: inline;">
+                <button type="submit" style="background: none; border: none; color: #3B82F6; cursor: pointer; text-decoration: underline; font-size: 0.9rem;">Didn't receive the code? Resend</button>
+            </form>
+        </div>
+        
+        <p class="auth-switch">Lost your code? <a href="{{ url_for('login') }}">Login again</a>.</p>
+    </div>
+    
+    <!-- Educational Panel for the Assignment -->
+    <div class="educational-panel">
+        <h3>System Context: Two-Factor Authentication (2FA)</h3>
+        <p><strong>Two-Factor Authentication</strong> requires users to provide two different authentication factors to verify themselves. In a real environment, this OTP would be securely transmitted via SMS or an Authenticator App. For demonstration purposes, it is verified via an on-screen alert and stored temporarily in the <em>Flask session cookie</em> until verified.</p>
+    </div>
+</div>
+{% endblock %}

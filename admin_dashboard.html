@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container admin-theme">
+    <div class="dashboard-header">
+        <h2>Security & General Administration Console</h2>
+        <span class="status-badge status-critical">Admin Full Access</span>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Registered Workers</h3>
+            <p class="stat-value">{{ workers|length }}</p>
+        </div>
+        <div class="stat-card">
+            <h3>Registered Managers</h3>
+            <p class="stat-value">{{ managers|length }}</p>
+        </div>
+    </div>
+
+    <!-- Admins can manage workers -->
+    <div class="content-panel" style="margin-top: 2rem;">
+        <h3>Worker Fleet Management</h3>
+        <p>Assign tasks, schedule shifts, or revoke access entirely.</p>
+        
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Worker ID</th>
+                    <th>Username</th>
+                    <th>Dept</th>
+                    <th>Tasks</th>
+                    <th>Shifts</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for worker in workers %}
+                <tr>
+                    <td>{{ worker.id }}</td>
+                    <td><strong>{{ worker.username }}</strong></td>
+                    <td>{{ worker.department or 'N/A' }}</td>
+                    <td>
+                        <ul style="padding-left: 20px; margin: 0; font-size: 0.9rem;">
+                            {% for task in worker.tasks %}
+                                <li>{{ task.description }} ({{ task.status }})</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td>
+                        <ul style="padding-left: 20px; margin: 0; font-size: 0.9rem;">
+                            {% for shift in worker.shifts %}
+                                <li>{{ shift.shift_date.strftime('%Y-%m-%d') }}: {{ shift.start_time }}-{{ shift.end_time }}</li>
+                            {% endfor %}
+                        </ul>
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('delete_worker', user_id=worker.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this worker? All associated data will be removed.');">
+                            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6">No workers available.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Form to Assign Task and Shift -->
+    <div class="content-panel" style="margin-top: 2rem;">
+        <h3>Assign Shift & Task</h3>
+        <p>Assign a work shift along with the day's task in one go.</p>
+        <form method="POST" action="{{ url_for('assign_work') }}" class="auth-form">
+            <div class="grid-2-col">
+                <div>
+                    <div class="form-group">
+                        <label>Select Worker</label>
+                        <select name="user_id" required>
+                            <option value="" disabled selected>-- Select a Worker --</option>
+                            {% for worker in workers %}
+                                <option value="{{ worker.id }}">{{ worker.username }} ({{ worker.department }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Task Description</label>
+                        <input type="text" name="description" required placeholder="Describe task...">
+                    </div>
+                </div>
+                <div>
+                    <div class="form-group">
+                        <label>Shift Date</label>
+                        <input type="date" name="shift_date" required>
+                    </div>
+                    <div style="display: flex; gap: 1rem;">
+                        <div class="form-group" style="flex:1;">
+                            <label>Start Time</label>
+                            <input type="time" name="start_time" required>
+                        </div>
+                        <div class="form-group" style="flex:1;">
+                            <label>End Time</label>
+                            <input type="time" name="end_time" required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Assign Work</button>
+        </form>
+    </div>
+
+    <!-- Manager Leave Requests -->
+    <div class="content-panel" style="margin-top: 2rem;">
+        <h3>Worker Leave Requests</h3>
+        <p>Approve or deny submitted leave requests.</p>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Worker</th>
+                    <th>Dates</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for leave in leaves %}
+                <tr>
+                    <td><strong>{{ leave.user.username }}</strong> ({{ leave.user.department }})</td>
+                    <td>{{ leave.start_date.strftime('%Y-%m-%d') }} to {{ leave.end_date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ leave.reason or 'N/A' }}</td>
+                    <td><span class="badge {% if leave.status == 'Approved' %}text-success{% elif leave.status == 'Rejected' %}text-danger{% else %}text-muted{% endif %}" style="font-weight:bold;">{{ leave.status }}</span></td>
+                    <td>
+                        {% if leave.status == 'Pending' %}
+                        <form method="POST" action="{{ url_for('update_leave', leave_id=leave.id) }}" style="display:inline;">
+                            <input type="hidden" name="status" value="Approved">
+                            <button type="submit" class="btn btn-sm" style="background-color: #10B981; color: white; border:none; padding: 4px 8px; border-radius: 3px; cursor: pointer;">Approve</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('update_leave', leave_id=leave.id) }}" style="display:inline;">
+                            <input type="hidden" name="status" value="Rejected">
+                            <button type="submit" class="btn btn-sm btn-danger" style="border:none; padding: 4px 8px; border-radius: 3px; cursor: pointer;">Reject</button>
+                        </form>
+                        {% else %}
+                        <span class="text-muted">Reviewed</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5">No leave requests found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Previous System Endpoints and Audits -->
+    <div style="margin-top: 2rem;">
+        <div class="content-panel">
+            <h3>Security Event Audit Trail</h3>
+            <p>Recent authentication and access events across the framework.</p>
+            
+            <table class="data-table log-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>User ID / Attempt</th>
+                        <th>Event Action</th>
+                        <th>IP Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr class="{% if 'Failed' in log.action or 'Unauthorized' in log.action %}text-danger{% endif %}">
+                        <td>{{ log.timestamp.strftime('%H:%M:%S') }}</td>
+                        <td>
+                            {% if log.user %}
+                                {{ log.user.username }}
+                            {% else %}
+                                <em>{{ log.username_attempt or 'System/Unknown' }}</em>
+                            {% endif %}
+                        </td>
+                        <td>{{ log.action }}</td>
+                        <td class="text-muted">{{ log.ip_address }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .grid-2-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+    .text-danger {
+        color: #EF4444;
+    }
+    .text-accent {
+        color: #3B82F6;
+    }
+    .btn-sm {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.8rem;
+    }
+    .btn-danger {
+        background-color: #EF4444;
+        color: white;
+    }
+    .btn-danger:hover {
+        background-color: #DC2626;
+    }
+    @media (max-width: 1000px) {
+        .grid-2-col { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h2>Worker Dashboard</h2>
+        <span class="status-badge status-online">{{ current_user.department }} Dept</span>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Your Access Level</h3>
+            <p class="stat-value role-badge role-worker">Worker</p>
+            <p class="stat-detail">Verified Identity</p>
+        </div>
+        <div class="stat-card">
+            <h3>Department</h3>
+            <p class="stat-value text-accent">{{ current_user.department }}</p>
+            <p class="stat-detail">Assigned Organizational Unit</p>
+        </div>
+        <div class="stat-card">
+            <h3>Today's Shift</h3>
+            {% if shift %}
+                <p class="stat-value text-success">{{ shift.start_time }} - {{ shift.end_time }}</p>
+                <p class="stat-detail">Date: {{ shift.shift_date.strftime('%Y-%m-%d') }}</p>
+            {% else %}
+                <p class="stat-value text-danger">Unassigned</p>
+                <p class="stat-detail">No shift scheduled today</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid-2-col">
+        <div class="content-panel">
+            <h3>Assigned Work / Tasks</h3>
+            <p>Your current responsibilities and pending tasks.</p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Date Assigned</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr>
+                        <td>{{ task.date_assigned.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ task.description }}</td>
+                        <td><span class="badge {% if task.status == 'Assigned' %}text-accent{% elif task.status == 'Completed' %}text-success{% else %}text-muted{% endif %}">{{ task.status }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3">No tasks assigned.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="content-panel">
+            <h3>Leave Requests</h3>
+            <p>Status of your recent leave requests.</p>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Dates</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for leave in leaves %}
+                    <tr>
+                        <td>{{ leave.start_date.strftime('%Y-%m-%d') }} to {{ leave.end_date.strftime('%Y-%m-%d') }}</td>
+                        <td>{{ leave.reason or 'N/A' }}</td>
+                        <td>{{ leave.status }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3">No leave records.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <h4 style="margin-top: 2rem; color: #E2E8F0;">Request New Leave</h4>
+            <form method="POST" action="{{ url_for('request_leave') }}" class="auth-form" style="margin-top: 1rem;">
+                <div style="display: flex; gap: 1rem;">
+                    <div class="form-group" style="flex:1;">
+                        <label>Start Date</label>
+                        <input type="date" name="start_date" required style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #4B5563; background: #1F2937; color: white;">
+                    </div>
+                    <div class="form-group" style="flex:1;">
+                        <label>End Date</label>
+                        <input type="date" name="end_date" required style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #4B5563; background: #1F2937; color: white;">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: 1rem;">
+                    <label>Reason (Optional)</label>
+                    <input type="text" name="reason" placeholder="Why are you taking leave?" style="width: 100%; padding: 0.5rem; border-radius: 4px; border: 1px solid #4B5563; background: #1F2937; color: white;">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Submit Request</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .grid-2-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+    .text-danger { color: #EF4444; }
+    .text-success { color: #10B981; }
+    .text-accent { color: #3B82F6; }
+    .text-muted { color: #9ca3af; }
+    @media (max-width: 1000px) {
+        .grid-2-col { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}

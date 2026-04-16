@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manufacturing Identity Framework</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-container">
+            <div class="brand">
+                <span class="icon">🏭</span>
+                <h1>IndX Security Identity</h1>
+            </div>
+            <ul class="nav-links">
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    {% if current_user.role in ['admin', 'manager'] %}
+                        <li><a href="{{ url_for('admin_dashboard') }}" class="admin-link">System Admin</a></li>
+                    {% endif %}
+                    <li class="user-info">Logged in as: <strong>{{ current_user.username }}</strong> ({{ current_user.role }})</li>
+                    <li><a href="{{ url_for('logout') }}" class="btn-logout">Logout</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}">Login</a></li>
+                    <li><a href="{{ url_for('signup') }}">Sign Up</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container main-content">
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; 2026 IndX Systems. Secure Manufacturing Identity Framework.</p>
+    </footer>
+</body>
+</html>
